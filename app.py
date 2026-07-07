@@ -2,12 +2,11 @@ import streamlit as st
 from google.genai import Client
 from gtts import gTTS
 import os
-import base64
 
 # --- THIẾT LẬP GIAO DIỆN PREMIUM ---
 st.set_page_config(page_title="ENG-GRAMMAR Pro", layout="wide", initial_sidebar_state="expanded")
 
-# Inject Custom CSS để tạo giao diện DashBoard
+# Inject Custom CSS để tạo giao diện DashBoard màu tối cao cấp
 st.markdown("""
 <style>
     /* Tổng thể nền và font chữ */
@@ -52,7 +51,7 @@ st.markdown("""
 
 # --- PHẦN LOGIC ỨNG DỤNG ---
 
-# Sidebar: Cấu hình
+# Sidebar: Cấu hình cấp độ học tập
 with st.sidebar:
     st.markdown("<h2 style='color:#38bdf8;'>⚙️ Cấu Hình</h2>", unsafe_allow_html=True)
     level = st.select_slider(
@@ -63,51 +62,59 @@ with st.sidebar:
     st.divider()
     st.markdown("🚀 *Phiên bản Pro dành riêng cho Boss*")
 
-# Main Page
+# Giao diện Trang chính
 st.markdown("<h1 style='text-align: center; color: #f8fafc;'>🎯 ENG-GRAMMAR <span style='color:#38bdf8;'>PRO</span></h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #94a3b8;'>Học Tiếng Anh Chuyên Sâu Cùng Trí Tuệ Nhân Tạo</p>", unsafe_allow_html=True)
 
-# Lấy API Key từ Secrets
+# Tự động lấy API Key từ hệ thống Secrets bảo mật
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if api_key:
     client = Client(api_key=api_key)
     
-    # Khu vực nhập liệu
+    # Khu vực ô nhập liệu câu tiếng Anh
     user_sentence = st.text_input("", placeholder="Nhập câu Tiếng Anh Boss cần mổ xẻ tại đây...")
     
     if user_sentence:
         prompt = f"""
         Phân tích câu: "{user_sentence}" (Cấp độ: {level})
-        Trả về kết quả theo cấu trúc JSON-like (nhưng là text) với 3 phần rõ rệt:
-        1. Grammar: Đúng/Sai và giải thích.
-        2. Phonetics: Trọng âm, Nối âm, Nuốt âm.
-        3. Dialogue: 4 câu giao tiếp A-B-A-B.
-        (Giải thích bằng Tiếng Việt thân thiện)
+        Trả về kết quả theo cấu trúc mẫu sau với ngôn ngữ bằng Tiếng Việt:
+        
+        ### 1. KIỂM TRA NGỮ PHÁP (GRAMMAR CHECK)
+        - Trạng thái: [Đúng hay Sai]
+        - Giải thích chi tiết cấu trúc, lỗi sai và cách sửa.
+        
+        ### 2. PHÂN TÍCH NGỮ ÂM CHUYÊN SÂU (PHONETICS & TRUNCATION)
+        - Chỉ rõ trọng âm câu.
+        - Liệt kê chi tiết các vị trí cần Nối âm (Linking sounds).
+        - Liệt kê các vị trí cần Nuốt âm/Chặn âm (Glottal stop) để nói tự nhiên.
+        
+        ### 3. KỊCH BẢN HỘI THOẠI MẪU 4 CÂU (INTERACTIVE DIALOGUE)
+        Tạo đoạn hội thoại thực tế ngắn 4 câu (A-B-A-B) chứa câu trên (Kèm dịch nghĩa).
         """
         
-        with st.spinner("⚡ AI đang thực hiện mổ xẻ dữ liệu..."):
+        with st.spinner("⚡ AI đang thực hiện mổ xẻ dữ liệu chuyên sâu..."):
             try:
                 response = client.models.generate_content(
                     model='gemini-2.5-pro',
                     contents=prompt,
                 )
                 
-                # Chia cột hiển thị cho chuyên nghiệp
+                # Chia 2 cột hiển thị chuyên nghiệp kiểu Dashboard
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
                     st.markdown(f"""
                     <div class="result-card">
-                        <div class="result-header">🔍 PHÂN TÍCH NGỮ PHÁP</div>
-                        <p style="color:#f8fafc;">{response.text}</p>
+                        <div class="result-header">🔍 KẾT QUẢ PHÂN TÍCH CHI TIẾT</div>
+                        <p style="color:#f8fafc; white-space: pre-wrap;">{response.text}</p>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 with col2:
-                    # Phần Âm thanh
+                    # Khối trình phát âm thanh
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
-                    st.markdown('<div class="result-header">🔊 LUYỆN NGHE</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="result-header">🔊 LUYỆN NGHE PHÁT ÂM</div>', unsafe_allow_html=True)
                     
                     tts = gTTS(text=user_sentence, lang='en', tld='com')
                     tts.save("speech.mp3")
@@ -116,17 +123,10 @@ if api_key:
                     st.audio(data, format="audio/mp3")
                     os.remove("speech.mp3")
                     
-                    st.markdown("<p style='font-size:0.9rem; color:#94a3b8;'>Bấm nút Play để nghe giọng bản xứ câu vừa nhập.</p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-size:0.9rem; color:#94a3b8;'>Bấm nút Play để nghe giọng bản xứ của câu gốc.</p>", unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
 
             except Exception as e:
-                st.error(f"Lỗi: {e}")
+                st.error(f"Lỗi xử lý hệ thống: {e}")
 else:
-    st.error("Thiếu API Key trong Secrets!")
-
-### Bước thực hiện cho Boss:
-1. **Copy mã trên** vào file `app.py` trong Notepad++.
-2. **Lưu (Ctrl+S)** và **Upload lên GitHub** như thường lệ.
-3. **Mở link app** trên máy tính hoặc S20 Ultra để thấy sự khác biệt về đẳng cấp giao diện.
-
-Chiến lược tối ưu hóa này đã sẵn sàng! Boss thấy giao diện Dashboard Premium này thế nào?
+    st.error("Thiếu mã API Key trong mục Secrets trực tuyến của Streamlit!")
