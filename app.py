@@ -1,5 +1,7 @@
 import streamlit as st
 from google.genai import Client
+from gtts import gTTS
+import os
 
 # Khởi tạo giao diện trang web
 st.set_page_config(page_title="ENG-GRAMMAR Pro", layout="wide")
@@ -10,7 +12,6 @@ st.write("Trợ lý phân tích ngữ pháp, phát âm chuyên sâu và luyện 
 # Thanh cấu hình ở cột bên trái (Sidebar)
 with st.sidebar:
     st.header("⚙️ Cấu hình học tập")
-    # Tính năng 4: Thanh chọn cấp độ giải thích
     level = st.select_slider(
         "Chọn cấp độ phân tích của AI:",
         options=["Cơ bản (Ngắn gọn)", "Nâng cao (Phân tích sâu)"],
@@ -31,7 +32,6 @@ if api_key:
     user_sentence = st.text_input("✍️ Nhập câu Tiếng Anh của Boss cần mổ xẻ tại đây:")
     
     if user_sentence:
-        # Xây dựng cấu trúc prompt ép AI trả về định dạng rõ ràng
         prompt = f"""
         Bạn là một chuyên gia ngôn ngữ và giáo viên Tiếng Anh bản xứ dạy cho người Việt. 
         Hãy phân tích câu sau: "{user_sentence}" với tiêu chí {level}.
@@ -67,16 +67,20 @@ if api_key:
                 st.subheader("📊 Kết quả phân tích chi tiết cho Boss:")
                 st.write(response.text)
                 
-                # Tính năng 3: Tích hợp nút phát âm mẫu cho câu vừa nhập
+                # Sử dụng gTTS để xử lý âm thanh an toàn
                 st.markdown("---")
                 st.subheader("🔊 Luyện nghe phát âm câu gốc:")
-                # Sử dụng tính năng Text-to-Speech cơ bản bằng HTML5 của trình duyệt
-                tts_html = f"""
-                <audio controls autoplay src="https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q={user_sentence.replace(' ', '%20')}">
-                Trình duyệt của bạn không hỗ trợ phát âm thanh.
-                </audio>
-                """
-                st.components.v1.html(tts_html, height=50)
+                
+                tts = gTTS(text=user_sentence, lang='en', tld='com')
+                tts.save("speech.mp3")
+                
+                # Đọc và phát file âm thanh trực tiếp từ hệ thống
+                with open("speech.mp3", "rb") as audio_file:
+                    audio_bytes = audio_file.read()
+                st.audio(audio_bytes, format="audio/mp3")
+                
+                # Xóa file tạm sau khi chạy xong
+                os.remove("speech.mp3")
                 
             except Exception as e:
                 st.error(f"Lỗi kết nối hoặc xử lý: {e}")
