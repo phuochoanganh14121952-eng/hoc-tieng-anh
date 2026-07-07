@@ -5,17 +5,19 @@ from google.genai import Client
 st.title("English Learning Assistant for Boss")
 st.write("Nhập một câu Tiếng Anh để AI kiểm tra ngữ pháp và giải thích.")
 
-# Nhập khóa bảo mật API (Boss sẽ điền mã Key sau)
-api_key = st.text_input("Nhập Gemini API Key của Boss:", type="password")
+# Tự động lấy API Key từ hệ thống cấu hình bảo mật Secrets của Streamlit
+if "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
+else:
+    api_key = st.text_input("Nhập Gemini API Key của Boss:", type="password")
 
 if api_key:
     client = Client(api_key=api_key)
     
-    # Ô nhập liệu câu tiếng Anh cần học
-    user_sentence = st.text_input("Nhập câu Tiếng Anh của Boss tại đây:")
+    # Ô nhập liệu câu tiếng Anh
+    user_sentence = st.text_input("Nhập câu Tiếng Anh tại đây:")
     
     if user_sentence:
-        # Cấu hình yêu cầu cho AI chuyên về giảng dạy
         prompt = f"""
         Bạn là một giáo viên Tiếng Anh bản xứ dạy cho người Việt. 
         Hãy kiểm tra câu sau: "{user_sentence}"
@@ -35,4 +37,4 @@ if api_key:
             except Exception as e:
                 st.error(f"Lỗi kết nối: {e}")
 else:
-    st.warning("Vui lòng nhập API Key để kích hoạt trợ lý AI.")
+    st.warning("Vui lòng cấu hình API Key để kích hoạt trợ lý AI.")
